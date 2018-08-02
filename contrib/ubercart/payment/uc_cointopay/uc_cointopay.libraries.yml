@@ -1,0 +1,8 @@
+Cointopay.styles:
+  css:
+    theme:
+      css/uc_Cointopay.css: {}
+
+Cointopay.direct:
+  js:
+    https://www.Cointopay.com/static/checkout/javascript/direct.min.js: { type: external, minified: true }

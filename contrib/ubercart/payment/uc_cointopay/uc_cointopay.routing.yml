@@ -1,0 +1,32 @@
+
+uc_cointopay.sendtcointopay:
+  path: '/cart/cointopay/process/order'
+  defaults:
+    _controller: '\Drupal\uc_cointopay\Controller\CointopayController::sendtcointopay'
+    _title: 'Process Order'
+  requirements:
+    _permission: 'access content'
+
+uc_cointopay.complete:
+  path: '/cart/cointopay/complete'
+  defaults:
+    _controller: '\Drupal\uc_cointopay\Controller\CointopayController::complete'
+    _title: 'Order complete'
+  requirements:
+    _permission: 'access content'
+
+uc_cointopay.notification:
+  path: '/cart/cointopay/notification'
+  defaults:
+    _controller: '\Drupal\uc_cointopay\Controller\CointopayController::notification'
+    _title: 'Notification callback'
+  requirements:
+    _permission: 'access content'
+
+uc_cointopay.callback:
+  path: '/cointopay/order/payment/callback'
+  defaults:
+    _controller: '\Drupal\uc_cointopay\Controller\CointopayController::callback'
+    _title: 'Order Confirmation'
+  requirements:
+    _permission: 'access content'
