@@ -10,47 +10,26 @@ use Drupal\uc_order\Entity\Order;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Drupal\uc_cointopay\Plugin\Ubercart\PaymentMethod\Cointopay;
 
 /**
  * Controller routines for uc_cointopay.
  */
 class CointopayController extends ControllerBase {
 
-  /**
-   * The cart manager.
-   *
-   * @var \Drupal\uc_cart\CartManager
-   */
+  
   protected $cartManager;
 
-  /**
-   * Constructs a CointopayController.
-   *
-   * @param \Drupal\uc_cart\CartManagerInterface $cart_manager
-   *   The cart manager.
-   */
   public function __construct(CartManagerInterface $cart_manager) {
     $this->cartManager = $cart_manager;
   }
 
-  /**
-   * {@inheritdoc}
-   */
   public static function create(ContainerInterface $container) {
     // @todo: Also need to inject logger
     return new static(
       $container->get('uc_cart.manager')
     );
   }
-
-  /**
-   * Finalizes cointopay transaction.
-   *
-   * @param int $cart_id
-   *   The cart identifier.
-   * @param \Symfony\Component\HttpFoundation\Request $request
-   *   The request of the page.
-   */
 
   public function sendtcointopay(Request $request)
   {
@@ -99,54 +78,85 @@ public function callback()
         $status = $_GET['status'] ??  '';
         $notEnough = $_GET['notenough'] ??  '';
         $order_id = $_GET['CustomerReferenceNr'];
+        $transactionID = $_GET['TransactionID'];
         $notification = '';
         
-        //$res = db_query("SELECT count(order_id) FROM uc_orders WHERE order_id ='$order_id' LIMIT 1");
-        //1. if paid && notenough == 1
-        //order marked as incomplete or some similar status
-        //do entry in order log file
-        //2. elseif paid
-        //mark order as complete and log file entry
-        // 3. else failed
-        //order has failed so processing -> failed
-
-        $now = time();
-
-        if($status == 'paid' && $notEnough == 1)
+        // validate order
+        if(isset($_GET['ConfirmCode']))
         {
-         // create log file entry............
-            $this->createLogMessage('Customer does not have enough balance to pay');
-            $notification = "You don't have enough balance to pay.";
-        }
-        else if($status == 'paid' && $notEnough == 0)
-        {
-            $Order = Order::load($order_id);
-            $Order->order_status = 'completed';
-            $Order->save();
-            $notification = "Your order has been completed.";
-        }
-        else if($status=='failed')
-        {
-            $Order = Order::load($order_id);
-            $Order->order_status = 'canceled';
-            $Order->save();
-            $notification = "Your order has been failed.";
+            $config = \Drupal::config('payment_method.settings.cointopay');
+            $config = $config->getStorage()->read('uc_payment.method.cointopay');
+            
+            $data = [
+                       'mid' => $config['settings']['mid'] ,
+                       'TransactionID' =>  $transactionID ,
+                       'ConfirmCode' => $_GET['ConfirmCode']
+                   ];
+            $response = $this->validateOrder($data);
+           
+            if($response->Status !== $_GET['status'])
+            {
+               return [
+                '#type' => 'markup',
+                '#markup' => 'We have detected changes in your order status. Your order has been halted.'];
+                exit;   
+            }
+            if($response->CustomerReferenceNr == $_GET['CustomerReferenceNr'])
+            {
+                //$res = db_query("SELECT count(order_id) FROM uc_orders WHERE order_id ='$order_id' LIMIT 1");
+                if($status == 'paid' && $notEnough == 1)
+                {
+                 // create log file entry............
+                    $this->createLogMessage('Customer does not have enough balance to pay');
+                    $notification = "You don't have enough balance to pay.";
+                }
+                else if($status == 'paid' && $notEnough == 0)
+                {
+                    $Order = Order::load($order_id);
+                    $Order->order_status = 'completed';
+                    $Order->save();
+                    $notification = "Your order has been completed.";
+                }
+                else if($status=='failed')
+                {
+                    $Order = Order::load($order_id);
+                    $Order->order_status = 'canceled';
+                    $Order->save();
+                    $notification = "Your order has been failed.";
+                }
+                else
+                {
+                    $Order = Order::load($order_id);
+                    $Order->order_status = 'canceled';
+                    $Order->save();
+                    $notification = "Your order has been failed.";
+                    
+                }
+                return [
+                '#type' => 'markup',
+                '#markup' => $notification];
+            }
+            else
+            {
+                return [
+                '#type' => 'markup',
+                '#markup' => 'We have detected changes in your order. Your order has been halted.'];
+                exit;   
+            }
         }
         else
         {
-            $Order = Order::load($order_id);
-            $Order->order_status = 'canceled';
-            $Order->save();
-            $notification = "Your order has been failed.";
-            
+             return [
+                '#type' => 'markup',
+                '#markup' => 'We have detected different order status. Your order has been halted.'];
+                exit;   
         }
-        return [
-        '#type' => 'markup',
-        '#markup' => $notification];
+        
     }
     catch(\Exception $e)
     {
         $this->createLogMessage($e->getMessage());
+        exit;
     }
     return '';
 }
@@ -170,24 +180,7 @@ public function complete($cart_id = 0, Request $request)
     $key = $request->request->get('key');
     $order_number = $configuration['demo'] ? 1 : $request->request->get('order_number');
     $valid = md5($configuration['secret_word'] . $request->request->get('sid') . $order_number . $request->request->get('total'));
-    // if (Unicode::strtolower($key) != Unicode::strtolower($valid)) {
-    //   uc_order_comment_save($order->id(), 0, $this->t('Attempted unverified cointopay completion for this order.'), 'admin');
-    //   throw new AccessDeniedHttpException();
-    // }
-
-    // if ($request->request->get('demo') == 'Y' xor $configuration['demo']) {
-    //   \Drupal::logger('uc_cointopay')->error('The cointopay payment for order <a href=":order_url">@order_id</a> demo flag was set to %flag, but the module is set to %mode mode.', array(
-    //     ':order_url' => $order->toUrl()->toString(),
-    //     '@order_id' => $order->id(),
-    //     '%flag' => $request->request->get('demo') == 'Y' ? 'Y' : 'N',
-    //     '%mode' => $configuration['demo'] ? 'Y' : 'N',
-    //   ));
-
-    //   if (!$configuration['demo']) {
-    //     throw new AccessDeniedHttpException();
-    //   }
-    // }
-
+    
     $address = $order->getAddress('billing');
     $address->street1 = $request->request->get('street_address');
     $address->street2 = $request->request->get('street_address2');
@@ -275,7 +268,33 @@ public function notification(Request $request)
     }
     die('ok');
     }
-
+    function  validateOrder($data)
+    {
+       $params = array(
+       "authentication:1",
+       'cache-control: no-cache',
+       );
+       $ch = curl_init();
+       curl_setopt_array($ch, array(
+       CURLOPT_URL => 'https://app.cointopay.com/v2REAPI?',
+       //CURLOPT_USERPWD => $this->apikey,
+       CURLOPT_POSTFIELDS => 'MerchantID='.$data['mid'].'&Call=QA&APIKey=_&output=json&TransactionID='.$data['TransactionID'].'&ConfirmCode='.$data['ConfirmCode'],
+       CURLOPT_RETURNTRANSFER => true,
+       CURLOPT_SSL_VERIFYPEER => false,
+       CURLOPT_HTTPHEADER => $params,
+       CURLOPT_USERAGENT => 1,
+       CURLOPT_HTTPAUTH => CURLAUTH_BASIC
+       )
+       );
+       $response = curl_exec($ch);
+       $results = json_decode($response);
+       if($results->CustomerReferenceNr)
+       {
+           return $results;
+       }
+       echo $response;
+       exit(': order not found on cointopay.com');
+    }
    function createLogMessage($message)
    {
      \Drupal::logger('uc_cointopay')->notice('Received cointopay notification with following data: @data', ['@data' => $message, TRUE]);

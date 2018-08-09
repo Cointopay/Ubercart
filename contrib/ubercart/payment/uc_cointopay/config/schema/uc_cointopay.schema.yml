@@ -24,4 +24,7 @@ payment_method.settings.Cointopay:
       label: ''
     sid:
       type: string
-      label: 'Vendor account number'
+      label: 'security_code'
+    mid:
+      type: string
+      label: 'merchant_id'

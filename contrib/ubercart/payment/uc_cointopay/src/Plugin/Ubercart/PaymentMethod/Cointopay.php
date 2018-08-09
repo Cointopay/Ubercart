@@ -9,15 +9,6 @@ use Drupal\uc_order\OrderInterface;
 use Drupal\uc_payment\OffsitePaymentMethodPluginInterface;
 use Drupal\uc_payment\PaymentMethodPluginBase;
 
-/**
- * Defines the Cointopay payment method.
- *
- * @UbercartPaymentMethod(
- *   id = "Cointopay",
- *   name = @Translation("Cointopay"),
- *   redirect = "\Drupal\uc_cointopay\Form\CointopayForm",
- * )
- */
 class Cointopay extends PaymentMethodPluginBase implements OffsitePaymentMethodPluginInterface {
 
   /**
