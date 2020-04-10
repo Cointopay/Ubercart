@@ -9,6 +9,15 @@ use Drupal\uc_order\OrderInterface;
 use Drupal\uc_payment\OffsitePaymentMethodPluginInterface;
 use Drupal\uc_payment\PaymentMethodPluginBase;
 
+/**
+ * Defines the Cointopay payment method.
+ *
+ * @UbercartPaymentMethod(
+ *   id = "cointopay",
+ *   name = @Translation("Cointopay")
+ * )
+ */
+
 class Cointopay extends PaymentMethodPluginBase implements OffsitePaymentMethodPluginInterface {
 
   /**
@@ -70,11 +79,6 @@ class Cointopay extends PaymentMethodPluginBase implements OffsitePaymentMethodP
       '#default_value' => $this->configuration['secret_word'],
       '#size' => 16,
     );
-    $form['demo'] = array(
-      '#type' => 'checkbox',
-      '#title' => $this->t('Enable demo mode, allowing you to process fake orders for testing purposes.'),
-      '#default_value' => $this->configuration['demo'],
-    );
     $form['language'] = array(
       '#type' => 'select',
       '#title' => $this->t('Language preference'),
@@ -84,20 +88,6 @@ class Cointopay extends PaymentMethodPluginBase implements OffsitePaymentMethodP
         'sp' => $this->t('Spanish'),
       ),
       '#default_value' => $this->configuration['language'],
-    );
-    $form['check'] = array(
-      '#type' => 'checkbox',
-      '#title' => $this->t('Allow customers to choose to pay by credit card or online check.'),
-      '#default_value' => $this->configuration['check'],
-    );
-    $form['checkout_type'] = array(
-      '#type' => 'radios',
-      '#title' => $this->t('Checkout type'),
-      '#options' => array(
-        'dynamic' => $this->t('Dynamic checkout (user is redirected to 2CO)'),
-        'direct' => $this->t('Direct checkout (payment page opens in iframe popup)'),
-      ),
-      '#default_value' => $this->configuration['checkout_type'],
     );
     $form['notification_url'] = array(
       '#type' => 'url',
@@ -173,6 +163,7 @@ class Cointopay extends PaymentMethodPluginBase implements OffsitePaymentMethodP
    * {@inheritdoc}
    */
   public function buildRedirectForm(array $form, FormStateInterface $form_state, OrderInterface $order = NULL) {
+	global $base_url;
     $address = $order->getAddress('billing');
     if ($address->country) {
       $country = \Drupal::service('country_manager')->getCountry($address->country)->getAlpha3();
@@ -216,13 +207,10 @@ class Cointopay extends PaymentMethodPluginBase implements OffsitePaymentMethodP
       $data['li_' . $i . '_product_id'] = $product->model->value;
       $data['li_' . $i . '_price'] = uc_currency_format($product->price->value, FALSE, FALSE, '.');
     }
-
-    if ('direct' == $this->configuration['checkout_type']) {
-      $form['#attached']['library'][] = 'uc_cointopay/Cointopay.direct';
-    }
-
-    $host = $this->configuration['demo'] ? 'sandbox' : 'www';
-    $form['#action'] = "http://localhost/dp8/cart/cointopay/process/order";//"https://$host.cointopay.com/checkout/purchase";
+	
+    $base_url_parts = parse_url($base_url);
+	$host = $base_url_parts['host'];
+    $form['#action'] = $base_url_parts['scheme']."://".$host."/cart/cointopay/process/order";//"https://$host.cointopay.com/checkout/purchase";
 
     foreach ($data as $name => $value) {
       $form[$name] = array('#type' => 'hidden', '#value' => $value);

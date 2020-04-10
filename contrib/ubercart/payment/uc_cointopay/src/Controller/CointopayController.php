@@ -44,7 +44,7 @@ class CointopayController extends ControllerBase {
         curl_setopt_array($ch, array(
         CURLOPT_URL => 'https://cointopay.com/MerchantAPI?Checkout=true',
         //CURLOPT_USERPWD => $this->apikey,
-        CURLOPT_POSTFIELDS => 'SecurityCode=' .$order->get('security_code').'&MerchantID='.$order->get('mid').'&Amount=' . number_format($order->get('total'), 2, '.', '').'&AltCoinID=1&output=json&inputCurrency=USD&CustomerReferenceNr='.$order->get('merchant_order_id').'&transactionconfirmurl='.$this->siteUrl().'cointopay/order/payment/callback&transactionfailurl='.$this->siteUrl().'cointopay/order/payment/callback',
+        CURLOPT_POSTFIELDS => 'SecurityCode=' .$order->get('security_code').'&MerchantID='.$order->get('mid').'&Amount=' . number_format($order->get('total'), 2, '.', '').'&AltCoinID=1&output=json&inputCurrency=USD&CustomerReferenceNr='.$order->get('merchant_order_id').'&transactionconfirmurl='.$this->siteUrl().'/cointopay/order/payment/callback&transactionfailurl='.$this->siteUrl().'/cointopay/order/payment/callback',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_HTTPHEADER => $params,
@@ -54,10 +54,13 @@ class CointopayController extends ControllerBase {
         );
         $redirect = curl_exec($ch);
 
-
+        
         if($redirect)
         {
             $results = json_decode($redirect);
+			if (is_string($results)){
+				exit('BadCredentials:'.$results);
+		    }
             $response = ['result' => 'success','url' => $results->RedirectURL];
         }
     
@@ -92,13 +95,71 @@ public function callback()
                        'TransactionID' =>  $transactionID ,
                        'ConfirmCode' => $_GET['ConfirmCode']
                    ];
+			$transactionData = $this->getTransactiondetail($data);
+			if(200 !== $transactionData['status_code']){
+				return [
+                '#type' => 'markup',
+                '#markup' => $transactionData['message']];
+                exit;
+			}
+			else{
+				if($transactionData['data']['CustomerReferenceNr'] != $_GET['CustomerReferenceNr']){
+					return [
+					'#type' => 'markup',
+					'#markup' => "Data mismatch! CustomerReferenceNr doesn\'t match"];
+					exit;
+				}
+				elseif($transactionData['data']['TransactionID'] != $_GET['TransactionID']){
+					return [
+					'#type' => 'markup',
+					'#markup' => "Data mismatch! TransactionID doesn\'t match"];
+					exit;
+				}
+				elseif($transactionData['data']['AltCoinID'] != $_GET['AltCoinID']){
+					return [
+					'#type' => 'markup',
+					'#markup' => "Data mismatch! AltCoinID doesn\'t match"];
+					exit;
+				}
+				elseif($transactionData['data']['MerchantID'] != $_GET['MerchantID']){
+					return [
+					'#type' => 'markup',
+					'#markup' => "Data mismatch! MerchantID doesn\'t match"];
+					exit;
+				}
+				elseif($transactionData['data']['coinAddress'] != $_GET['CoinAddressUsed']){
+					return [
+					'#type' => 'markup',
+					'#markup' => "Data mismatch! coinAddress doesn\'t match"];
+					exit;
+				}
+				elseif($transactionData['data']['SecurityCode'] != $_GET['SecurityCode']){
+					return [
+					'#type' => 'markup',
+					'#markup' => "Data mismatch! SecurityCode doesn\'t match"];
+					exit;
+				}
+				elseif($transactionData['data']['inputCurrency'] != $_GET['inputCurrency']){
+					return [
+					'#type' => 'markup',
+					'#markup' => "Data mismatch! inputCurrency doesn\'t match"];
+					exit;
+				}
+				elseif($transactionData['data']['Status'] != $_GET['status']){
+					return [
+					'#type' => 'markup',
+					'#markup' => "Data mismatch! status doesn\'t match. Your order status is ".$transactionData['data']['Status']];
+					exit;
+				}
+				
+			}
             $response = $this->validateOrder($data);
            
             if($response->Status !== $_GET['status'])
             {
                return [
                 '#type' => 'markup',
-                '#markup' => 'We have detected changes in your order status. Your order has been halted.'];
+                '#markup' => 'We have detected changes in your order status. Your order status is '.$response->Status];
                 exit;   
             }
             if($response->CustomerReferenceNr == $_GET['CustomerReferenceNr'])
@@ -288,12 +349,23 @@ public function notification(Request $request)
        );
        $response = curl_exec($ch);
        $results = json_decode($response);
-       if($results->CustomerReferenceNr)
-       {
-           return $results;
-       }
-       echo $response;
+       return $results;
        exit(': order not found on cointopay.com');
+    }
+	function getTransactiondetail($data) {
+        $validate = true;
+
+        $merchant_id =  $data['mid'];
+        $confirm_code = $data['ConfirmCode'];
+        $url = "https://cointopay.com/v2REAPI?Call=Transactiondetail&MerchantID=".$merchant_id."&output=json&ConfirmCode=".$confirm_code."&APIKey=a";
+        $curl = curl_init($url);
+        curl_setopt_array($curl, array(
+            CURLOPT_RETURNTRANSFER => 1,
+            CURLOPT_SSL_VERIFYPEER => 0
+        ));
+        $result = curl_exec($curl);
+        $result = json_decode($result, true);
+        return $result;
     }
    function createLogMessage($message)
    {
@@ -364,8 +436,10 @@ $tmpURL = rtrim($tmpURL, '/');
 
 // give return value
 
-return $base_url; 
-
+//return $base_url; 
+global $base_url;
+$base_url_parts = parse_url($base_url);
+return  $base_url_parts['scheme']."://".$base_url_parts['host'];
 }
 
 }

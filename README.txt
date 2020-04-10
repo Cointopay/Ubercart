@@ -2,21 +2,27 @@
 
 ## HOW TO INSTALL UC_COINTOPAY PAYMENT METHOD****************************
 
+Please follow the Ubercart Cointopay Plugin install instructions mentioned here: <a href="https://docs.google.com/document/d/1uoTqVqaYajjJP6ly6Y08u-dXG-KAZBGYzkYk0CEaLWE/edit?usp=sharing">download Ubercart Cointopay Plugin documentation</a> or direct link: https://docs.google.com/document/d/1uoTqVqaYajjJP6ly6Y08u-dXG-KAZBGYzkYk0CEaLWE/edit?usp=sharing
+
 ### Required: Install ubertcart version 4.*
 
-1:- Login to admin dashboard
+1:- Download Ubercart drupal 8 module https://www.drupal.org/project/ubercart
 
-2:- Click on Extend Link which will list all available modules and option to add new module
+2:- Login to admin dashboard
 
-3:- Click on "+install new module" button
+3:- Install and enable the ubercart module by following the same steps described below.
 
-4:- Past the url of the module or browse the zip file from your compputer and click on "Install" button
+4:- Click on Extend Link which will list all available modules and option to add new module
 
-5: After installed, click on the "enable newly added module options" which will redirect you to the all available listed modules.
+5:- Click on "+install new module" button
 
-6:- Search the module by key word "Cointopay"
+6:- Past the url of the module or browse the zip file from your compputer and click on "Install" button
 
-7:- Check the Option on Cointopay and click on Install button
+7: After installed, click on the "enable newly added module options" which will redirect you to the all available listed modules.
+
+8:- Search the module by key word "Cointopay"
+
+9:- Check the Option on Cointopay and click on Install button
 
 Check the confirmation message above. Installation done!!!
 
