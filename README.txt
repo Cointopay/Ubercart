@@ -10,13 +10,13 @@ Please follow the Ubercart Cointopay Plugin install instructions mentioned here:
 
 2:- Login to admin dashboard
 
-3:- Install and enable the ubercart module by following the same steps described below.
+3:- Drupal Ubercart module is the requirement for its installation so in order to install cointopay plugin you need to install drupal Ubercart  module first.
 
 4:- Click on Extend Link which will list all available modules and option to add new module
 
 5:- Click on "+install new module" button
 
-6:- Past the url of the module or browse the zip file from your compputer and click on "Install" button
+6:- Past the url of the module or browse the zip file from your computer and click on "Install" button
 
 7: After installed, click on the "enable newly added module options" which will redirect you to the all available listed modules.
 
@@ -41,7 +41,7 @@ Add security code (required)
 
 all other fields are optional
 
-click on save button.
+click on the save button.
 
 
 ####Configuration DONE!!
