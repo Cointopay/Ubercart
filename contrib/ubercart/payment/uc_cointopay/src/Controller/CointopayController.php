@@ -115,31 +115,31 @@ public function callback()
 					'#markup' => "Data mismatch! TransactionID doesn\'t match"];
 					exit;
 				}
-				elseif($transactionData['data']['AltCoinID'] != $_GET['AltCoinID']){
+				elseif(isset($_GET['AltCoinID']) && $transactionData['data']['AltCoinID'] != $_GET['AltCoinID']){
 					return [
 					'#type' => 'markup',
 					'#markup' => "Data mismatch! AltCoinID doesn\'t match"];
 					exit;
 				}
-				elseif($transactionData['data']['MerchantID'] != $_GET['MerchantID']){
+				elseif(isset($_GET['MerchantID']) && $transactionData['data']['MerchantID'] != $_GET['MerchantID']){
 					return [
 					'#type' => 'markup',
 					'#markup' => "Data mismatch! MerchantID doesn\'t match"];
 					exit;
 				}
-				elseif($transactionData['data']['coinAddress'] != $_GET['CoinAddressUsed']){
+				elseif(isset($_GET['CoinAddressUsed']) && $transactionData['data']['coinAddress'] != $_GET['CoinAddressUsed']){
 					return [
 					'#type' => 'markup',
 					'#markup' => "Data mismatch! coinAddress doesn\'t match"];
 					exit;
 				}
-				elseif($transactionData['data']['SecurityCode'] != $_GET['SecurityCode']){
+				elseif(isset($_GET['SecurityCode']) && $transactionData['data']['SecurityCode'] != $_GET['SecurityCode']){
 					return [
 					'#type' => 'markup',
 					'#markup' => "Data mismatch! SecurityCode doesn\'t match"];
 					exit;
 				}
-				elseif($transactionData['data']['inputCurrency'] != $_GET['inputCurrency']){
+				elseif(isset($_GET['inputCurrency']) && $transactionData['data']['inputCurrency'] != $_GET['inputCurrency']){
 					return [
 					'#type' => 'markup',
 					'#markup' => "Data mismatch! inputCurrency doesn\'t match"];
